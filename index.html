@@ -1,63 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Weaver | WeaverBird Web</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WeaverBird Web</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="icon" href="/favicon.ico" />
 </head>
-<body class="bg-black text-white font-poppins">
-    <!-- Header -->
-    <header class="flex justify-between items-center py-8 px-12 sticky top-0 bg-gray-900">
-        <div class="text-3xl font-bold">
-            <h1>Weaver</h1>
-        </div>
-        <div>
-            <button class="bg-red-500 text-white py-3 px-8 rounded-lg text-lg transition-colors hover:bg-red-600">
-                Get WeaverBird Web
-            </button>
-        </div>
-    </header>
+<body class="bg-black text-white font-sans">
 
-    <!-- Intro Section -->
-    <section class="text-center mt-20 animate__animated animate__fadeIn animate__delay-1s">
-        <h2 class="text-4xl font-semibold mb-4">Welcome to WeaverBird Web</h2>
-        <p class="text-xl max-w-2xl mx-auto">The sleek, intuitive IDE for web developers. Fast, efficient, and fully customizable.</p>
-    </section>
+  <header class="flex items-center justify-between px-6 py-4 bg-black">
+    <img src="/images/weaver-logo.png" alt="Weaver Logo" class="h-10 w-auto" />
+  </header>
 
-    <!-- Features Section -->
-    <section class="flex justify-around items-center py-20 opacity-0 animate__animated animate__fadeIn animate__delay-2s" id="features">
-        <div class="text-center opacity-0 animate__animated animate__fadeIn animate__delay-3s">
-            <h3 class="text-2xl font-semibold mb-4">Intuitive UI</h3>
-            <p class="text-lg">Designed for ease, WeaverBird Web makes web development feel effortless.</p>
-        </div>
-        <div class="text-center opacity-0 animate__animated animate__fadeIn animate__delay-4s">
-            <h3 class="text-2xl font-semibold mb-4">Customization</h3>
-            <p class="text-lg">Make WeaverBird Web yours with customizable themes, layouts, and settings.</p>
-        </div>
-        <div class="text-center opacity-0 animate__animated animate__fadeIn animate__delay-5s">
-            <h3 class="text-2xl font-semibold mb-4">Fast Setup</h3>
-            <p class="text-lg">Get started with WeaverBird Web in minutes. Focus on building, not configuring.</p>
-        </div>
-    </section>
+  <section class="text-white min-h-screen flex flex-col items-center justify-center bg-black">
+    <img src="/images/weaver-logo.png" alt="Weaver Logo" class="h-24 mb-4" />
+    <h1 class="text-5xl font-bold">WeaverBird Web</h1>
+    <p class="text-lg mt-2">The modern IDE for web developers.</p>
+  </section>
 
-    <!-- Footer -->
-    <footer class="text-center py-8 bg-gray-900">
-        <p>&copy; 2025 Weaver. All Rights Reserved.</p>
-    </footer>
-
-    <script>
-        // Scroll-triggered animations
-        const features = document.querySelector('#features');
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    features.classList.add('animate__fadeIn');
-                }
-            });
-        }, { threshold: 0.5 });
-
-        observer.observe(features);
-    </script>
 </body>
 </html>
