@@ -3,21 +3,703 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WeaverBird Web</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <title>WeaverBird Web IDE</title>
   <link rel="icon" href="/favicon.ico" />
+  <style>
+    :root {
+      --bg: #1e1e1e;
+      --panel: #252526;
+      --panel-light: #2d2d30;
+      --border: #3e3e42;
+      --text: #d4d4d4;
+      --muted: #969696;
+      --accent: #0e639c;
+      --active: #37373d;
+      --success: #89d185;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+    }
+    .ide {
+      display: grid;
+      grid-template-columns: 52px 320px 1fr;
+      grid-template-rows: 40px 1fr 30px;
+      height: 100vh;
+    }
+    .titlebar {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      background: #323233;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .brand { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+    .brand-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #5c9dff, #4ec9b0);
+    }
+    .activity-bar {
+      background: #333333;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 8px;
+      gap: 10px;
+    }
+    .activity-btn {
+      width: 36px;
+      height: 36px;
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .activity-btn.active, .activity-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .sidebar {
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .panel-section {
+      border-bottom: 1px solid var(--border);
+      padding: 10px;
+    }
+    .panel-section h2 {
+      margin: 0 0 8px;
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .upload-row, .web-tool-row { display: flex; gap: 6px; flex-wrap: wrap; }
+    .btn {
+      border: 1px solid var(--border);
+      background: var(--panel-light);
+      color: var(--text);
+      padding: 6px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .btn.primary { background: var(--accent); border-color: #1177bb; color: #fff; }
+    input[type="search"], select {
+      width: 100%;
+      border: 1px solid var(--border);
+      background: #1f1f1f;
+      color: var(--text);
+      padding: 7px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    .file-tree {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      max-height: 27vh;
+      overflow: auto;
+      font-size: 13px;
+    }
+    .file-tree button {
+      width: 100%;
+      text-align: left;
+      border: 0;
+      background: transparent;
+      color: var(--text);
+      padding: 6px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .file-tree button.active, .file-tree button:hover { background: var(--active); }
+    .main {
+      display: grid;
+      grid-template-rows: 36px 1fr 160px;
+      min-width: 0;
+      min-height: 0;
+    }
+    .tabs {
+      display: flex;
+      align-items: center;
+      overflow-x: auto;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+    }
+    .tab {
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      padding: 9px 12px;
+      border-right: 1px solid var(--border);
+      cursor: pointer;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .tab.active { color: #fff; background: var(--bg); }
+    .workspace {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: 0;
+    }
+    .editor-wrap, .preview-wrap {
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .editor-wrap { border-right: 1px solid var(--border); }
+    .editor-meta, .preview-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 10px;
+      font-size: 11px;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      background: #1b1b1b;
+      gap: 8px;
+    }
+    .editor {
+      flex: 1;
+      width: 100%;
+      border: 0;
+      outline: 0;
+      resize: none;
+      padding: 14px;
+      background: #1e1e1e;
+      color: #dcdcdc;
+      font-family: Consolas, Monaco, "Courier New", monospace;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .preview-shell {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      background: #111;
+      padding: 12px;
+      overflow: auto;
+    }
+    iframe {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #fff;
+    }
+    .preview-placeholder {
+      color: var(--muted);
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      border: 1px dashed var(--border);
+      border-radius: 6px;
+    }
+    .terminal {
+      border-top: 1px solid var(--border);
+      background: #181818;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .terminal-head {
+      padding: 7px 10px;
+      font-size: 12px;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+    .terminal-log {
+      margin: 0;
+      padding: 10px;
+      list-style: none;
+      overflow: auto;
+      font-family: Consolas, monospace;
+      font-size: 12px;
+      flex: 1;
+    }
+    .terminal-log li { margin-bottom: 4px; }
+    .statusbar {
+      grid-column: 1 / -1;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 10px;
+      font-size: 12px;
+      background: var(--accent);
+      color: #fff;
+    }
+    .palette {
+      position: fixed;
+      inset: 70px 0 auto;
+      margin: 0 auto;
+      width: min(680px, 92vw);
+      background: #252526;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+      display: none;
+      z-index: 20;
+    }
+    .palette input {
+      width: 100%;
+      border: 0;
+      border-bottom: 1px solid var(--border);
+      background: transparent;
+      color: #fff;
+      padding: 12px;
+      font-size: 14px;
+      outline: 0;
+    }
+    .palette-list {
+      list-style: none;
+      margin: 0;
+      padding: 8px;
+      max-height: 300px;
+      overflow: auto;
+    }
+    .palette-list button {
+      width: 100%;
+      text-align: left;
+      border: 0;
+      border-radius: 4px;
+      background: transparent;
+      color: var(--text);
+      padding: 8px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .palette-list button:hover { background: var(--active); }
+    .hidden { display: none !important; }
+    @media (max-width: 1100px) {
+      .ide { grid-template-columns: 44px 240px 1fr; }
+      .workspace { grid-template-columns: 1fr; }
+      .preview-wrap { display: none; }
+    }
+  </style>
 </head>
-<body class="bg-black text-white font-sans">
+<body>
+  <div class="ide">
+    <div class="titlebar">
+      <div class="brand"><span class="brand-dot"></span> WeaverBird Web Dev IDE</div>
+      <div>Web-first workflow • Ctrl/Cmd+P: Palette • Ctrl/Cmd+S: Save</div>
+    </div>
+    <aside class="activity-bar" aria-label="Activity Bar">
+      <button class="activity-btn active" title="Explorer">📁</button>
+      <button class="activity-btn" title="Search">🔍</button>
+      <button class="activity-btn" title="Design">🎨</button>
+    </aside>
+    <section class="sidebar">
+      <div class="panel-section">
+        <h2>Project Explorer</h2>
+        <div class="upload-row">
+          <input id="file-upload" type="file" multiple class="hidden" />
+          <button class="btn primary" id="upload-btn">Upload</button>
+          <button class="btn" id="new-file-btn">New</button>
+        </div>
+        <p style="font-size:11px;color:var(--muted);margin:8px 0 0;">Session-only files for frontend prototyping.</p>
+      </div>
+      <div class="panel-section">
+        <h2>Web Dev Tools</h2>
+        <div class="web-tool-row">
+          <button class="btn" id="scaffold-html-btn">HTML Boilerplate</button>
+          <button class="btn" id="scaffold-css-btn">CSS Reset</button>
+          <button class="btn" id="scaffold-js-btn">JS Starter</button>
+        </div>
+      </div>
+      <div class="panel-section">
+        <h2>Search</h2>
+        <input id="search-input" type="search" placeholder="Find files" />
+      </div>
+      <div class="panel-section" style="flex:1;min-height:0;">
+        <h2>Files</h2>
+        <ul class="file-tree" id="file-list"></ul>
+      </div>
+    </section>
+    <main class="main">
+      <div class="tabs" id="tabs"></div>
+      <section class="workspace">
+        <section class="editor-wrap">
+          <div class="editor-meta">
+            <span id="active-path">No file selected</span>
+            <span id="cursor-pos">Ln 1, Col 1</span>
+          </div>
+          <textarea id="editor" class="editor" spellcheck="false" placeholder="Upload your HTML, CSS, and JS files to start."></textarea>
+        </section>
+        <section class="preview-wrap">
+          <div class="preview-meta">
+            <span id="preview-target">Live Preview</span>
+            <select id="preview-size">
+              <option value="100%">Desktop</option>
+              <option value="768px">Tablet</option>
+              <option value="390px">Mobile</option>
+            </select>
+          </div>
+          <div class="preview-shell" id="preview-shell"></div>
+        </section>
+      </section>
+      <section class="terminal">
+        <div class="terminal-head">Frontend activity log</div>
+        <ul class="terminal-log" id="terminal"></ul>
+      </section>
+    </main>
+    <div class="statusbar">
+      <span id="status-left">Ready</span>
+      <span id="status-right">UTF-8 • LF • Plain Text</span>
+    </div>
+  </div>
 
-  <header class="flex items-center justify-between px-6 py-4 bg-black">
-    <img src="/images/weaver-logo.png" alt="Weaver Logo" class="h-10 w-auto" />
-  </header>
+  <div class="palette" id="palette" role="dialog" aria-modal="true" aria-label="Command Palette">
+    <input id="palette-input" placeholder="Type a command or file name" />
+    <ul class="palette-list" id="palette-list"></ul>
+  </div>
 
-  <section class="text-white min-h-screen flex flex-col items-center justify-center bg-black">
-    <img src="/images/weaver-logo.png" alt="Weaver Logo" class="h-24 mb-4" />
-    <h1 class="text-5xl font-bold">WeaverBird Web</h1>
-    <p class="text-lg mt-2">The modern IDE for web developers.</p>
-  </section>
+  <script>
+    const state = {
+      files: new Map(),
+      openTabs: [],
+      activeFile: null,
+      searchTerm: "",
+      previewBlobUrls: new Map()
+    };
 
+    const ui = {
+      fileUpload: document.getElementById("file-upload"),
+      uploadBtn: document.getElementById("upload-btn"),
+      newFileBtn: document.getElementById("new-file-btn"),
+      fileList: document.getElementById("file-list"),
+      tabs: document.getElementById("tabs"),
+      editor: document.getElementById("editor"),
+      activePath: document.getElementById("active-path"),
+      cursorPos: document.getElementById("cursor-pos"),
+      terminal: document.getElementById("terminal"),
+      statusLeft: document.getElementById("status-left"),
+      statusRight: document.getElementById("status-right"),
+      searchInput: document.getElementById("search-input"),
+      palette: document.getElementById("palette"),
+      paletteInput: document.getElementById("palette-input"),
+      paletteList: document.getElementById("palette-list"),
+      previewShell: document.getElementById("preview-shell"),
+      previewTarget: document.getElementById("preview-target"),
+      previewSize: document.getElementById("preview-size"),
+      scaffoldHtmlBtn: document.getElementById("scaffold-html-btn"),
+      scaffoldCssBtn: document.getElementById("scaffold-css-btn"),
+      scaffoldJsBtn: document.getElementById("scaffold-js-btn")
+    };
+
+    const snippets = {
+      html: `<!doctype html>\n<html lang="en">\n<head>\n  <meta charset="UTF-8" />\n  <meta name="viewport" content="width=device-width, initial-scale=1.0" />\n  <title>Web App</title>\n  <link rel="stylesheet" href="styles.css" />\n</head>\n<body>\n  <main class="container">\n    <h1>Hello, web!</h1>\n  </main>\n  <script src="app.js"></script>\n</body>\n</html>`,
+      css: `/* Minimal reset */\n* { box-sizing: border-box; margin: 0; padding: 0; }\nbody { font-family: Inter, system-ui, sans-serif; background: #f8f9fb; color: #212529; }\n.container { max-width: 980px; margin: 0 auto; padding: 2rem; }`,
+      js: `document.addEventListener('DOMContentLoaded', () => {\n  console.log('Web app ready');\n});`
+    };
+
+    function log(message, kind = "info") {
+      const line = document.createElement("li");
+      line.textContent = `> ${message}`;
+      line.style.color = kind === "success" ? "var(--success)" : "var(--text)";
+      ui.terminal.prepend(line);
+    }
+
+    function detectLanguage(name) {
+      const ext = name.split(".").pop()?.toLowerCase();
+      return {
+        html: "HTML", css: "CSS", js: "JavaScript", ts: "TypeScript", jsx: "React JSX", tsx: "React TSX", json: "JSON", md: "Markdown"
+      }[ext] || "Plain Text";
+    }
+
+    function mimeForFile(name) {
+      const ext = name.split(".").pop()?.toLowerCase();
+      return {
+        html: "text/html", css: "text/css", js: "application/javascript", json: "application/json", svg: "image/svg+xml", png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif"
+      }[ext] || "text/plain";
+    }
+
+    function ensureTab(name) {
+      if (!state.openTabs.includes(name)) state.openTabs.push(name);
+    }
+
+    function openFile(name) {
+      if (!state.files.has(name)) return;
+      state.activeFile = name;
+      ensureTab(name);
+      ui.editor.value = state.files.get(name);
+      ui.activePath.textContent = name;
+      ui.statusLeft.textContent = `Editing ${name}`;
+      ui.statusRight.textContent = `UTF-8 • LF • ${detectLanguage(name)}`;
+      renderTabs();
+      renderFiles();
+      updatePreview();
+      log(`Opened ${name}`);
+    }
+
+    function renderFiles() {
+      const fragment = document.createDocumentFragment();
+      const names = [...state.files.keys()].sort((a, b) => a.localeCompare(b));
+      const filtered = names.filter((name) => name.toLowerCase().includes(state.searchTerm.toLowerCase()));
+      ui.fileList.innerHTML = "";
+      filtered.forEach((name) => {
+        const li = document.createElement("li");
+        const button = document.createElement("button");
+        button.textContent = name;
+        if (name === state.activeFile) button.classList.add("active");
+        button.addEventListener("click", () => openFile(name));
+        li.append(button);
+        fragment.append(li);
+      });
+      ui.fileList.append(fragment);
+    }
+
+    function renderTabs() {
+      ui.tabs.innerHTML = "";
+      state.openTabs.forEach((name) => {
+        const tab = document.createElement("button");
+        tab.className = `tab ${name === state.activeFile ? "active" : ""}`;
+        tab.textContent = name;
+        tab.addEventListener("click", () => openFile(name));
+        ui.tabs.append(tab);
+      });
+    }
+
+    async function loadFiles(files) {
+      for (const file of files) {
+        const content = await file.text();
+        state.files.set(file.name, content);
+      }
+      const first = files[0]?.name;
+      if (first) openFile(first);
+      renderFiles();
+      renderPalette();
+      updatePreview();
+      log(`Uploaded ${files.length} file(s)`, "success");
+    }
+
+    function createFile(defaultName = "untitled.html") {
+      const name = prompt("Enter new file name", defaultName);
+      if (!name) return;
+      if (!state.files.has(name)) state.files.set(name, "");
+      openFile(name);
+      renderPalette();
+      log(`Created ${name}`, "success");
+    }
+
+    function closeActiveTab() {
+      if (!state.activeFile) return;
+      const current = state.activeFile;
+      state.openTabs = state.openTabs.filter((name) => name !== current);
+      state.activeFile = state.openTabs.at(-1) || null;
+      if (state.activeFile) {
+        ui.editor.value = state.files.get(state.activeFile) || "";
+        ui.activePath.textContent = state.activeFile;
+      } else {
+        ui.editor.value = "";
+        ui.activePath.textContent = "No file selected";
+      }
+      renderTabs();
+      renderFiles();
+      updatePreview();
+      log(`Closed ${current}`);
+    }
+
+    function saveActiveFile() {
+      if (!state.activeFile) return;
+      state.files.set(state.activeFile, ui.editor.value);
+      const blob = new Blob([ui.editor.value], { type: mimeForFile(state.activeFile) });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = state.activeFile;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      ui.statusLeft.textContent = `Saved ${state.activeFile}`;
+      log(`Saved ${state.activeFile}`, "success");
+    }
+
+    function updateCursor() {
+      const text = ui.editor.value.slice(0, ui.editor.selectionStart);
+      const lines = text.split("\n");
+      ui.cursorPos.textContent = `Ln ${lines.length}, Col ${lines[lines.length - 1].length + 1}`;
+    }
+
+    function buildBlobMap() {
+      state.previewBlobUrls.forEach((url) => URL.revokeObjectURL(url));
+      state.previewBlobUrls = new Map();
+      state.files.forEach((content, name) => {
+        const blob = new Blob([content], { type: mimeForFile(name) });
+        state.previewBlobUrls.set(name, URL.createObjectURL(blob));
+      });
+    }
+
+    function rewriteCss(content) {
+      return content.replace(/url\((['"]?)([^'"\)]+)\1\)/g, (full, q, rawPath) => {
+        const clean = rawPath.trim();
+        const mapped = state.previewBlobUrls.get(clean);
+        return mapped ? `url('${mapped}')` : full;
+      });
+    }
+
+    function rewriteHtml(content) {
+      let out = content.replace(/(src|href)=(["'])([^"']+)\2/g, (full, attr, quote, path) => {
+        const mapped = state.previewBlobUrls.get(path);
+        return mapped ? `${attr}=${quote}${mapped}${quote}` : full;
+      });
+      out = out.replace(/<style[^>]*>([\s\S]*?)<\/style>/gi, (full, css) => `<style>${rewriteCss(css)}</style>`);
+      return out;
+    }
+
+    function findHtmlUsingCss(cssFile) {
+      for (const [name, content] of state.files.entries()) {
+        if (!name.toLowerCase().endsWith(".html")) continue;
+        const regex = new RegExp(`<link[^>]+href=["']${cssFile.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}["']`, "i");
+        if (regex.test(content)) return name;
+      }
+      return [...state.files.keys()].find((name) => name.toLowerCase().endsWith(".html")) || null;
+    }
+
+    function setPreviewFrame(html, label) {
+      ui.previewShell.innerHTML = "";
+      const iframe = document.createElement("iframe");
+      iframe.srcdoc = html;
+      iframe.style.maxWidth = ui.previewSize.value;
+      ui.previewShell.append(iframe);
+      ui.previewTarget.textContent = label;
+    }
+
+    function setPreviewPlaceholder(message) {
+      ui.previewShell.innerHTML = `<div class="preview-placeholder">${message}</div>`;
+      ui.previewTarget.textContent = "Live Preview";
+    }
+
+    function updatePreview() {
+      if (!state.activeFile) return setPreviewPlaceholder("Open an HTML or CSS file to see a live preview.");
+      buildBlobMap();
+      const active = state.activeFile;
+      const content = state.files.get(active) || "";
+
+      if (active.toLowerCase().endsWith(".html")) {
+        setPreviewFrame(rewriteHtml(content), `Previewing ${active}`);
+        return;
+      }
+
+      if (active.toLowerCase().endsWith(".css")) {
+        const targetHtml = findHtmlUsingCss(active);
+        if (!targetHtml) return setPreviewPlaceholder("No HTML file found to preview this CSS file.");
+        const html = state.files.get(targetHtml) || "";
+        setPreviewFrame(rewriteHtml(html), `Previewing ${targetHtml} styled by ${active}`);
+        return;
+      }
+
+      setPreviewPlaceholder("Preview is available for HTML and CSS files.");
+    }
+
+    function togglePalette(show) {
+      ui.palette.style.display = show ? "block" : "none";
+      if (show) {
+        ui.paletteInput.value = "";
+        renderPalette();
+        ui.paletteInput.focus();
+      }
+    }
+
+    function renderPalette() {
+      const commands = [
+        { label: "New HTML File", action: () => createFile("index.html") },
+        { label: "New CSS File", action: () => createFile("styles.css") },
+        { label: "New JS File", action: () => createFile("app.js") },
+        { label: "Save Active File", action: saveActiveFile },
+        { label: "Close Active Tab", action: closeActiveTab }
+      ];
+      const fileItems = [...state.files.keys()].map((name) => ({
+        label: `Open: ${name}`,
+        action: () => { openFile(name); togglePalette(false); }
+      }));
+      const query = ui.paletteInput.value.toLowerCase();
+      const items = [...commands, ...fileItems].filter((item) => item.label.toLowerCase().includes(query));
+      ui.paletteList.innerHTML = "";
+      items.forEach((item) => {
+        const li = document.createElement("li");
+        const btn = document.createElement("button");
+        btn.textContent = item.label;
+        btn.addEventListener("click", item.action);
+        li.append(btn);
+        ui.paletteList.append(li);
+      });
+    }
+
+    function injectSnippet(type) {
+      if (!state.activeFile) return;
+      const current = state.files.get(state.activeFile) || "";
+      const snippet = snippets[type];
+      if (!snippet) return;
+      const updated = current ? `${current}\n\n${snippet}` : snippet;
+      state.files.set(state.activeFile, updated);
+      ui.editor.value = updated;
+      updatePreview();
+      log(`Inserted ${type.toUpperCase()} starter into ${state.activeFile}`, "success");
+    }
+
+    ui.uploadBtn.addEventListener("click", () => ui.fileUpload.click());
+    ui.fileUpload.addEventListener("change", (event) => loadFiles(event.target.files));
+    ui.newFileBtn.addEventListener("click", () => createFile("index.html"));
+    ui.searchInput.addEventListener("input", (event) => { state.searchTerm = event.target.value; renderFiles(); });
+    ui.paletteInput.addEventListener("input", renderPalette);
+    ui.previewSize.addEventListener("change", updatePreview);
+    ui.scaffoldHtmlBtn.addEventListener("click", () => injectSnippet("html"));
+    ui.scaffoldCssBtn.addEventListener("click", () => injectSnippet("css"));
+    ui.scaffoldJsBtn.addEventListener("click", () => injectSnippet("js"));
+
+    ui.editor.addEventListener("input", () => {
+      if (state.activeFile) state.files.set(state.activeFile, ui.editor.value);
+      updateCursor();
+      updatePreview();
+    });
+    ui.editor.addEventListener("click", updateCursor);
+    ui.editor.addEventListener("keyup", updateCursor);
+
+    document.querySelectorAll(".activity-btn").forEach((button) => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll(".activity-btn").forEach((b) => b.classList.remove("active"));
+        button.classList.add("active");
+      });
+    });
+
+    document.addEventListener("keydown", (event) => {
+      const commandKey = event.ctrlKey || event.metaKey;
+      if (commandKey && event.key.toLowerCase() === "p") {
+        event.preventDefault();
+        togglePalette(true);
+      }
+      if (commandKey && event.key.toLowerCase() === "s") {
+        event.preventDefault();
+        saveActiveFile();
+      }
+      if (event.key === "Escape") togglePalette(false);
+    });
+
+    log("WeaverBird Web Dev IDE initialized");
+    renderFiles();
+    renderTabs();
+    updateCursor();
+    updatePreview();
+  </script>
 </body>
 </html>
